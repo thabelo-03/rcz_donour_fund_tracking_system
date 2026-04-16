@@ -121,14 +121,17 @@
 2. Go to [render.com](https://render.com) → New Web Service
 3. Connect your GitHub repo
 4. Settings:
-   - **Build Command**: `cd client && npm install && npm run build && cd ../server && npm install`
-   - **Start Command**: `cd server && node server.js`
+   - **Runtime**: `Node`
+   - **Build Command**: `npm run install-all && npm run build`
+   - **Start Command**: `npm run start`
 5. Add Environment Variables:
    - `MONGO_URI` = your MongoDB Atlas connection string
    - `JWT_SECRET` = any random secret string
    - `NODE_ENV` = production
 
 ---
+> **Note**: For this deployment to work, your `server/server.js` must be configured to serve the static frontend build. The current `server.js` in the repository is set up for this.
+
 
 ## 📐 Research Framework Alignment
 
