@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
 const path = require('path');
-require('dotenv').config();
+require('dotenv').config({ path: path.resolve(__dirname, '.env') });
 
 const connectDB = require('./config/db');
 
@@ -13,6 +13,7 @@ const grantRoutes = require('./routes/grants');
 const transactionRoutes = require('./routes/transactions');
 const auditRoutes = require('./routes/audit');
 const reportRoutes = require('./routes/reports');
+const analysisRoutes = require('./routes/analysis');
 
 const app = express();
 
@@ -31,6 +32,7 @@ app.use('/api/grants', grantRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/audit', auditRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/analysis', analysisRoutes);
 
 // Serve static files in production
 if (process.env.NODE_ENV === 'production') {

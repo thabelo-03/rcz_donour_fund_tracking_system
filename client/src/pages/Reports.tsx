@@ -1,15 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { reportAPI, grantAPI } from '../api';
+import { reportAPI, grantAPI, analysisAPI } from '../api';
 import { Chart as ChartJS, ArcElement, CategoryScale, LinearScale, BarElement, Tooltip, Legend } from 'chart.js';
 import { Bar, Doughnut } from 'react-chartjs-2';
-import { FileText, Download, Printer, TrendingUp, PieChart } from 'lucide-react';
+import { FileText, Printer, TrendingUp, PieChart, Brain, Loader } from 'lucide-react';
 
 ChartJS.register(ArcElement, CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 
 const Reports: React.FC = () => {
   const [stats, setStats] = useState<any>(null);
   const [grants, setGrants] = useState<any[]>([]);
+  const [transparency, setTransparency] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [transparencyLoading, setTransparencyLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
@@ -17,6 +19,16 @@ const Reports: React.FC = () => {
       .then(([s, g]) => { setStats(s); setGrants(g); setLoading(false); })
       .catch(() => setLoading(false));
   }, []);
+
+  // Load transparency scores dynamically when tab is selected
+  useEffect(() => {
+    if (activeTab === 'transparency' && !transparency) {
+      setTransparencyLoading(true);
+      analysisAPI.getTransparency()
+        .then(t => { setTransparency(t); setTransparencyLoading(false); })
+        .catch(() => setTransparencyLoading(false));
+    }
+  }, [activeTab]);
 
   if (loading) return <div className="page-container"><div className="loader"><div className="spinner"></div></div></div>;
   if (!stats) return <div className="page-container"><div className="empty-state"><h3>Unable to load reports</h3></div></div>;
@@ -59,7 +71,7 @@ const Reports: React.FC = () => {
       <div className="page-header">
         <div>
           <h1 className="page-title">Reports</h1>
-          <p className="page-subtitle">Financial reports and transparency dashboard</p>
+          <p className="page-subtitle">Financial reports and AI-powered transparency dashboard</p>
         </div>
         <button className="btn btn-outline" onClick={() => window.print()}>
           <Printer size={18} /> Print Report
@@ -69,12 +81,13 @@ const Reports: React.FC = () => {
       <div className="tabs">
         <button className={`tab ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')}>Financial Overview</button>
         <button className={`tab ${activeTab === 'grants' ? 'active' : ''}`} onClick={() => setActiveTab('grants')}>Grant Reports</button>
-        <button className={`tab ${activeTab === 'transparency' ? 'active' : ''}`} onClick={() => setActiveTab('transparency')}>Transparency</button>
+        <button className={`tab ${activeTab === 'transparency' ? 'active' : ''}`} onClick={() => setActiveTab('transparency')}>
+          <Brain size={14} style={{ marginRight: 6 }} /> Transparency
+        </button>
       </div>
 
       {activeTab === 'overview' && (
         <>
-          {/* Summary */}
           <div className="data-grid" style={{ marginBottom: 24 }}>
             <div className="card">
               <div className="card-header">
@@ -116,7 +129,6 @@ const Reports: React.FC = () => {
             </div>
           </div>
 
-          {/* Category Breakdown */}
           <div className="card">
             <div className="card-header">
               <h3 className="card-title">Expenditure by Category</h3>
@@ -184,56 +196,86 @@ const Reports: React.FC = () => {
 
       {activeTab === 'transparency' && (
         <>
-          <div className="kpi-grid" style={{ marginBottom: 24 }}>
-            <div className="kpi-card green">
-              <div className="kpi-icon green"><TrendingUp size={22} /></div>
-              <div className="kpi-content">
-                <div className="kpi-label">Transparency Score</div>
-                <div className="kpi-value" style={{ color: 'var(--success)' }}>87%</div>
-              </div>
-            </div>
-            <div className="kpi-card gold">
-              <div className="kpi-icon gold"><FileText size={22} /></div>
-              <div className="kpi-content">
-                <div className="kpi-label">Reports Submitted On Time</div>
-                <div className="kpi-value">{stats.activeGrants > 0 ? Math.round((stats.activeGrants / stats.totalGrants) * 100) : 0}%</div>
-              </div>
-            </div>
-            <div className="kpi-card blue">
-              <div className="kpi-icon blue"><PieChart size={22} /></div>
-              <div className="kpi-content">
-                <div className="kpi-label">Donor Satisfaction Rate</div>
-                <div className="kpi-value">91%</div>
-              </div>
-            </div>
-          </div>
-          <div className="card">
-            <div className="card-header">
-              <h3 className="card-title">Transparency Indicators</h3>
-            </div>
-            <div style={{ display: 'grid', gap: 16, padding: '8px 0' }}>
-              {[
-                { label: 'Fund Traceability', score: 85, desc: 'Ability to trace every dollar from receipt to expenditure' },
-                { label: 'Reporting Compliance', score: 79, desc: 'Timely submission of financial reports to donors' },
-                { label: 'Audit Readiness', score: 92, desc: 'Availability of documentation for audit purposes' },
-                { label: 'Segregation of Duties', score: 74, desc: 'Proper separation of financial responsibilities' },
-                { label: 'Budget Adherence', score: 88, desc: 'Spending within approved budget allocations' }
-              ].map((item, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 0', borderBottom: '1px solid var(--border)' }}>
-                  <div style={{ flex: 1 }}>
-                    <div className="font-semibold" style={{ fontSize: '0.9rem' }}>{item.label}</div>
-                    <div className="text-xs text-secondary">{item.desc}</div>
-                  </div>
-                  <div style={{ width: 120 }}>
-                    <div className="progress-bar" style={{ height: 8 }}>
-                      <div className={`progress-fill ${item.score >= 80 ? 'green' : item.score >= 60 ? 'gold' : 'red'}`} style={{ width: `${item.score}%` }}></div>
+          {transparencyLoading ? (
+            <div className="loader"><div className="spinner"></div></div>
+          ) : transparency ? (
+            <>
+              {/* Overall Score */}
+              <div className="kpi-grid" style={{ marginBottom: 24 }}>
+                <div className="kpi-card green">
+                  <div className="kpi-icon green"><TrendingUp size={22} /></div>
+                  <div className="kpi-content">
+                    <div className="kpi-label">Overall Transparency Score</div>
+                    <div className="kpi-value" style={{ color: transparency.overallScore >= 70 ? 'var(--success)' : transparency.overallScore >= 50 ? 'var(--warning)' : 'var(--danger)' }}>
+                      {transparency.overallScore}%
                     </div>
+                    <span className="text-xs text-secondary">Calculated from live data</span>
                   </div>
-                  <span className="font-bold" style={{ width: 40, textAlign: 'right', color: item.score >= 80 ? 'var(--success)' : 'var(--warning)' }}>{item.score}%</span>
                 </div>
-              ))}
-            </div>
-          </div>
+                <div className="kpi-card gold">
+                  <div className="kpi-icon gold"><FileText size={22} /></div>
+                  <div className="kpi-content">
+                    <div className="kpi-label">Reports Submitted On Time</div>
+                    <div className="kpi-value">{stats.activeGrants > 0 ? Math.round((stats.activeGrants / stats.totalGrants) * 100) : 0}%</div>
+                    <span className="text-xs text-secondary">Active vs total grants</span>
+                  </div>
+                </div>
+                <div className="kpi-card blue">
+                  <div className="kpi-icon blue"><Brain size={22} /></div>
+                  <div className="kpi-content">
+                    <div className="kpi-label">AI Analysis</div>
+                    <div className="kpi-value" style={{ fontSize: '1rem', marginTop: 4 }}>
+                      <span className="badge badge-accent">Live Scoring</span>
+                    </div>
+                    <span className="text-xs text-secondary">Gemini AI + Rule-based</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Transparency Indicators — Dynamic from database */}
+              <div className="card">
+                <div className="card-header">
+                  <h3 className="card-title">Transparency Indicators</h3>
+                  <span className="badge badge-accent" style={{ fontSize: '0.65rem' }}>
+                    <Brain size={10} /> AI Calculated
+                  </span>
+                </div>
+                <div style={{ display: 'grid', gap: 16, padding: '8px 0' }}>
+                  {transparency.indicators.map((item: any, i: number) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 0', borderBottom: '1px solid var(--border)' }}>
+                      <div style={{ flex: 1 }}>
+                        <div className="font-semibold" style={{ fontSize: '0.9rem' }}>{item.label}</div>
+                        <div className="text-xs text-secondary">{item.desc}</div>
+                      </div>
+                      <div style={{ width: 120 }}>
+                        <div className="progress-bar" style={{ height: 8 }}>
+                          <div className={`progress-fill ${item.score >= 80 ? 'green' : item.score >= 60 ? 'gold' : 'red'}`} style={{ width: `${item.score}%` }}></div>
+                        </div>
+                      </div>
+                      <span className="font-bold" style={{ width: 40, textAlign: 'right', color: item.score >= 80 ? 'var(--success)' : item.score >= 60 ? 'var(--warning)' : 'var(--danger)' }}>{item.score}%</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Methodology note */}
+              <div className="card" style={{ marginTop: 20, borderColor: 'var(--border-accent)' }}>
+                <div className="flex items-center gap-3 mb-2">
+                  <Brain size={18} style={{ color: 'var(--accent)' }} />
+                  <span className="font-bold">How Scores Are Calculated</span>
+                </div>
+                <div className="text-sm text-secondary" style={{ lineHeight: 1.8 }}>
+                  All transparency scores are <strong>dynamically calculated</strong> from actual system data — nothing is hardcoded.
+                  The overall score is a weighted average: Fund Traceability (25%), Reporting Compliance (20%), Audit Readiness (20%),
+                  Budget Adherence (15%), Compliance Rate (10%), and Segregation of Duties (10%). Transaction risk analysis uses
+                  <strong> Google Gemini AI</strong> when available, with a forensic accounting rule-based fallback engine inspired by
+                  Benford&apos;s Law, COSO Framework controls, and red flag indicators from the Principal-Agent theory.
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="card"><div className="empty-state"><h3>Unable to load transparency data</h3></div></div>
+          )}
         </>
       )}
     </div>

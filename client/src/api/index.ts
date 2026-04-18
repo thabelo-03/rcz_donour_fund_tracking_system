@@ -72,3 +72,13 @@ export const auditAPI = {
 export const reportAPI = {
   getDashboard: () => request<any>('/reports/dashboard'),
 };
+
+// AI Analysis
+export const analysisAPI = {
+  analyzeTransaction: (id: string, performedBy: string, role: string) =>
+    request<any>(`/analysis/transaction/${id}`, { method: 'POST', body: JSON.stringify({ performedBy, role }) }),
+  batchAnalyze: (performedBy: string, role: string) =>
+    request<any>('/analysis/batch', { method: 'POST', body: JSON.stringify({ performedBy, role }) }),
+  getTransparency: () => request<any>('/analysis/transparency'),
+  getDonorConfidence: (id: string) => request<any>(`/analysis/donor-confidence/${id}`),
+};

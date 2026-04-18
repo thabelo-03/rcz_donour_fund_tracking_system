@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
 const User = require('../models/User');
 const Donor = require('../models/Donor');
@@ -193,6 +194,7 @@ const seedData = async () => {
       const approvalStatuses = ['Approved', 'Approved', 'Approved', 'Pending Review', 'Pending Approval'];
 
       transactions.push({
+        transactionId: `TXN-${Date.now()}-${String(i).padStart(3, '0')}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`,
         type, amount, currency: 'USD',
         donor: donors[donorIdx]._id,
         grant: grants[grantIdx]._id,

@@ -4,12 +4,13 @@
   "description": "Donor Fund Tracking & Grant Management System for the Reformed Church in Zimbabwe",
   "scripts": {
     "dev": "concurrently \"npm run server\" \"npm run client\"",
-    "server": "cd server && node server.js",
-    "client": "cd client && npm run dev",
-    "build": "cd client && npm run build",
-    "start": "cd server && node server.js",
-    "seed": "cd server && node seed/seedData.js",
-    "install-all": "npm install && cd server && npm install && cd ../client && npm install"
+    "server": "node server/server.js",
+    "client": "npm --prefix client run dev",
+    "build": "npm --prefix client run build",
+    "start": "node server/server.js",
+    "seed": "node server/seed/seedData.js",
+    "seed:admin": "node server/seed/seedAdmin.js",
+    "install-all": "npm install; npm --prefix server install; npm --prefix client install"
   },
   "dependencies": {
     "concurrently": "^8.2.2"
