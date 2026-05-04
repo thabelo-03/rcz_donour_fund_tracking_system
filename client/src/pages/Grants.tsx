@@ -128,13 +128,17 @@ const Grants: React.FC = () => {
               </div>
 
               {/* Financial Summary */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 12 }}>
                 <div>
                   <div className="text-xs text-secondary">Total Budget</div>
                   <div className="font-bold">${g.totalAmount.toLocaleString()}</div>
                 </div>
                 <div>
-                  <div className="text-xs text-secondary">Remaining</div>
+                  <div className="text-xs text-secondary">Released</div>
+                  <div className="font-bold" style={{ color: 'var(--info)' }}>${(g.amountDisbursed || 0).toLocaleString()}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-secondary">Balance</div>
                   <div className="font-bold" style={{ color: 'var(--success)' }}>${g.amountRemaining.toLocaleString()}</div>
                 </div>
               </div>
