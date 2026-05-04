@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
 const path = require('path');
+const jwt = require('jsonwebtoken');
 require('dotenv').config({ path: path.resolve(__dirname, '.env') });
 
 const connectDB = require('./config/db');
@@ -24,6 +25,36 @@ connectDB();
 app.use(cors());
 app.use(express.json());
 app.use(morgan('dev'));
+
+// Middleware to enforce read-only access for auditors
+const enforceAuditorReadOnly = (req, res, next) => {
+  if (req.method === 'GET') return next();
+  if (req.originalUrl.includes('/api/auth')) return next();
+  if (req.originalUrl.includes('/api/analysis')) return next();
+
+  // Auditors are specifically allowed to flag transactions
+  if (req.originalUrl.match(/\/api\/transactions\/.*\/flag/) && req.method === 'PATCH') return next();
+
+  try {
+    let role = req.user?.role;
+    if (!role && req.headers.authorization) {
+      const token = req.headers.authorization.split(' ')[1];
+      if (token) {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        role = decoded.role;
+      }
+    }
+
+    if (role === 'auditor') {
+      return res.status(403).json({ message: 'Access denied: Auditors have read-only privileges.' });
+    }
+  } catch (error) {
+    // Token parsing errors will be handled by your main auth middleware
+  }
+  next();
+};
+
+app.use('/api', enforceAuditorReadOnly);
 
 // API Routes
 app.use('/api/auth', authRoutes);

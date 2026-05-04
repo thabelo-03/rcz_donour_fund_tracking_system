@@ -1,6 +1,10 @@
 const mongoose = require('mongoose');
+const dns = require('dns');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
+
+// Force Google DNS for SRV record resolution (fixes router DNS issues)
+dns.setServers(['8.8.8.8', '8.8.4.4']);
 
 const connectDB = async () => {
   try {

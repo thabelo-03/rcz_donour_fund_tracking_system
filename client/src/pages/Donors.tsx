@@ -20,6 +20,7 @@ const Donors: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [editDonor, setEditDonor] = useState<Donor | null>(null);
   const [form, setForm] = useState({ name: '', type: 'International', email: '', country: '', contactPerson: '', phone: '', notes: '' });
+  const [isAuditor, setIsAuditor] = useState(false);
 
   const fetchDonors = () => {
     const params = new URLSearchParams();
@@ -30,7 +31,14 @@ const Donors: React.FC = () => {
       .catch(() => setLoading(false));
   };
 
-  useEffect(() => { fetchDonors(); }, [search, filterType]);
+  useEffect(() => {
+    fetchDonors();
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      try { setIsAuditor(JSON.parse(userStr).role === 'auditor'); }
+      catch (e) { }
+    }
+  }, [search, filterType]);
 
   const openCreate = () => {
     setEditDonor(null);
@@ -74,7 +82,7 @@ const Donors: React.FC = () => {
           <h1 className="page-title">Donors</h1>
           <p className="page-subtitle">Manage donor profiles and track contributions</p>
         </div>
-        <button className="btn btn-accent" onClick={openCreate}><Plus size={18} /> Add Donor</button>
+        {!isAuditor && <button className="btn btn-accent" onClick={openCreate}><Plus size={18} /> Add Donor</button>}
       </div>
 
       <div className="filters-bar">
@@ -137,10 +145,14 @@ const Donors: React.FC = () => {
                 </td>
                 <td><span className={`badge ${statusBadge(d.status)}`}>{d.status}</span></td>
                 <td>
-                  <div className="flex gap-2">
-                    <button className="btn btn-outline btn-sm" onClick={() => openEdit(d)}>Edit</button>
-                    <button className="btn btn-outline btn-sm" style={{ color: 'var(--danger)' }} onClick={() => handleDelete(d._id)}>Del</button>
-                  </div>
+                  {!isAuditor ? (
+                    <div className="flex gap-2">
+                      <button className="btn btn-outline btn-sm" onClick={() => openEdit(d)}>Edit</button>
+                      <button className="btn btn-outline btn-sm" style={{ color: 'var(--danger)' }} onClick={() => handleDelete(d._id)}>Del</button>
+                    </div>
+                  ) : (
+                    <span className="text-xs text-secondary">Read Only</span>
+                  )}
                 </td>
               </tr>
             ))}
