@@ -134,8 +134,8 @@ const Grants: React.FC = () => {
                   <div className="font-bold">${g.totalAmount.toLocaleString()}</div>
                 </div>
                 <div>
-                  <div className="text-xs text-secondary">Released</div>
-                  <div className="font-bold" style={{ color: 'var(--info)' }}>${(g.amountDisbursed || 0).toLocaleString()}</div>
+                  <div className="text-xs text-secondary">Spent</div>
+                  <div className="font-bold" style={{ color: 'var(--info)' }}>${(g.amountSpent || 0).toLocaleString()}</div>
                 </div>
                 <div>
                   <div className="text-xs text-secondary">Balance</div>
