@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { donorAPI } from '../api';
 import { Donor } from '../types';
 import { Plus, Search, Mail, Globe, User, TrendingUp, X } from 'lucide-react';
+import { useApp } from '../context/AppContext';
 
 const statusBadge = (s: string) => {
   const map: Record<string, string> = { Active: 'badge-success', Inactive: 'badge-neutral', Prospective: 'badge-info' };
@@ -13,6 +14,7 @@ const typeBadge = (t: string) => {
 };
 
 const Donors: React.FC = () => {
+  const { user } = useApp();
   const [donors, setDonors] = useState<Donor[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -20,7 +22,14 @@ const Donors: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [editDonor, setEditDonor] = useState<Donor | null>(null);
   const [form, setForm] = useState({ name: '', type: 'International', email: '', country: '', contactPerson: '', phone: '', notes: '' });
-  const [isAuditor, setIsAuditor] = useState(false);
+
+  const isAdmin = user?.role === 'admin';
+  const isFinance = user?.role === 'finance_officer';
+  const isProjectManager = user?.role === 'project_manager';
+
+  const canAddDonor = isAdmin || isFinance;
+  const canEditDonor = isAdmin || isFinance || isProjectManager;
+  const canDeleteDonor = isAdmin;
 
   const fetchDonors = () => {
     const params = new URLSearchParams();
@@ -33,11 +42,6 @@ const Donors: React.FC = () => {
 
   useEffect(() => {
     fetchDonors();
-    const userStr = localStorage.getItem('user');
-    if (userStr) {
-      try { setIsAuditor(JSON.parse(userStr).role === 'auditor'); }
-      catch (e) { }
-    }
   }, [search, filterType]);
 
   const openCreate = () => {
@@ -82,7 +86,7 @@ const Donors: React.FC = () => {
           <h1 className="page-title">Donors</h1>
           <p className="page-subtitle">Manage donor profiles and track contributions</p>
         </div>
-        {!isAuditor && <button className="btn btn-accent" onClick={openCreate}><Plus size={18} /> Add Donor</button>}
+        {canAddDonor && <button className="btn btn-accent" onClick={openCreate}><Plus size={18} /> Add Donor</button>}
       </div>
 
       <div className="filters-bar">
@@ -145,14 +149,10 @@ const Donors: React.FC = () => {
                 </td>
                 <td><span className={`badge ${statusBadge(d.status)}`}>{d.status}</span></td>
                 <td>
-                  {!isAuditor ? (
-                    <div className="flex gap-2">
-                      <button className="btn btn-outline btn-sm" onClick={() => openEdit(d)}>Edit</button>
-                      <button className="btn btn-outline btn-sm" style={{ color: 'var(--danger)' }} onClick={() => handleDelete(d._id)}>Del</button>
-                    </div>
-                  ) : (
-                    <span className="text-xs text-secondary">Read Only</span>
-                  )}
+                  <div className="flex gap-2">
+                    {canEditDonor && <button className="btn btn-outline btn-sm" onClick={() => openEdit(d)}>Edit</button>}
+                    {canDeleteDonor && <button className="btn btn-outline btn-sm" style={{ color: 'var(--danger)' }} onClick={() => handleDelete(d._id)}>Del</button>}
+                  </div>
                 </td>
               </tr>
             ))}

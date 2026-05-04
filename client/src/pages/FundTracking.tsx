@@ -116,6 +116,17 @@ const FundTracking: React.FC = () => {
     return map[level] || 'var(--text-tertiary)';
   };
 
+  const isAdmin = user?.role === 'admin';
+  const isFinance = user?.role === 'finance_officer';
+  const isTreasurer = user?.role === 'treasurer';
+  const isProjectManager = user?.role === 'project_manager';
+
+  const canAddTx = isAdmin || isFinance || isProjectManager;
+  const canApprove = isAdmin || isFinance;
+  const canFlag = isAdmin || isFinance || isTreasurer || isProjectManager;
+  const canReconcile = isAdmin || isFinance;
+  const canAnalyze = isAdmin || isFinance || isTreasurer || isProjectManager;
+
   if (loading) return <div className="page-container"><div className="loader"><div className="spinner"></div></div></div>;
 
   return (
@@ -126,11 +137,15 @@ const FundTracking: React.FC = () => {
           <p className="page-subtitle">Real-time transaction ledger with AI-powered risk analysis</p>
         </div>
         <div className="flex gap-3">
-          <button className="btn btn-outline" onClick={handleBatchAnalyze} disabled={batchAnalyzing}>
-            {batchAnalyzing ? <Loader size={18} className="spin" /> : <Brain size={18} />}
-            {batchAnalyzing ? 'Analyzing...' : 'AI Batch Analysis'}
-          </button>
-          <button className="btn btn-accent" onClick={() => setShowModal(true)}><Plus size={18} /> New Transaction</button>
+          {canAnalyze && (
+            <button className="btn btn-outline" onClick={handleBatchAnalyze} disabled={batchAnalyzing}>
+              {batchAnalyzing ? <Loader size={18} className="spin" /> : <Brain size={18} />}
+              {batchAnalyzing ? 'Analyzing...' : 'AI Batch Analysis'}
+            </button>
+          )}
+          {canAddTx && (
+            <button className="btn btn-accent" onClick={() => setShowModal(true)}><Plus size={18} /> New Transaction</button>
+          )}
         </div>
       </div>
 
@@ -257,24 +272,26 @@ const FundTracking: React.FC = () => {
                   <td>
                     <div className="flex gap-2">
                       {/* AI Analyze Button */}
-                      <button
-                        className="btn btn-outline btn-sm"
-                        style={{ padding: '4px 8px', color: 'var(--accent)' }}
-                        title="AI Risk Analysis"
-                        onClick={() => handleAIAnalyze(tx._id)}
-                        disabled={analyzingId === tx._id}
-                      >
-                        {analyzingId === tx._id ? <Loader size={13} /> : <Brain size={13} />}
-                      </button>
-                      {tx.status === 'Pending' && (
+                      {canAnalyze && (
+                        <button
+                          className="btn btn-outline btn-sm"
+                          style={{ padding: '4px 8px', color: 'var(--accent)' }}
+                          title="AI Risk Analysis"
+                          onClick={() => handleAIAnalyze(tx._id)}
+                          disabled={analyzingId === tx._id}
+                        >
+                          {analyzingId === tx._id ? <Loader size={13} /> : <Brain size={13} />}
+                        </button>
+                      )}
+                      {canApprove && tx.status === 'Pending' && (
                         <button className="btn btn-primary btn-sm" style={{ padding: '4px 10px', fontSize: '0.7rem' }} onClick={() => handleApprove(tx._id)}>Approve</button>
                       )}
-                      {!tx.isFlagged && tx.status !== 'Flagged' && (
+                      {canFlag && !tx.isFlagged && tx.status !== 'Flagged' && (
                         <button className="btn btn-outline btn-sm" style={{ padding: '4px 8px', color: 'var(--danger)' }} title="Flag" onClick={() => handleFlag(tx._id)}>
                           <Flag size={13} />
                         </button>
                       )}
-                      {!tx.reconciled && tx.status === 'Completed' && (
+                      {canReconcile && !tx.reconciled && tx.status === 'Completed' && (
                         <button className="btn btn-outline btn-sm" style={{ padding: '4px 8px' }} title="Reconcile" onClick={() => handleReconcile(tx._id)}>
                           <CheckCircle size={13} />
                         </button>

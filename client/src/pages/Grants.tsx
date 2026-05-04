@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { grantAPI, donorAPI } from '../api';
 import { Grant, Donor } from '../types';
 import { Plus, Search, X, Calendar, DollarSign } from 'lucide-react';
+import { useApp } from '../context/AppContext';
 
 const statusColors: Record<string, string> = {
   Applied: 'badge-info', Approved: 'badge-accent', Active: 'badge-success',
@@ -14,6 +15,7 @@ const catColors: Record<string, string> = {
 const statusOrder = ['Applied', 'Approved', 'Active', 'Reporting', 'Closed'];
 
 const Grants: React.FC = () => {
+  const { user } = useApp();
   const [grants, setGrants] = useState<Grant[]>([]);
   const [donors, setDonors] = useState<Donor[]>([]);
   const [loading, setLoading] = useState(true);
@@ -27,6 +29,14 @@ const Grants: React.FC = () => {
     totalAmount: '', fundType: 'Restricted', startDate: '', endDate: '',
     reportingFrequency: 'Quarterly', projectManager: '', congregation: '', conditions: ''
   });
+
+  const isAdmin = user?.role === 'admin';
+  const isFinance = user?.role === 'finance_officer';
+  const isProjectManager = user?.role === 'project_manager';
+
+  const canAddGrant = isAdmin || isFinance || isProjectManager;
+  const canEditGrant = isAdmin || isFinance || isProjectManager;
+  const canDeleteGrant = isAdmin; // not used in UI yet, but good to have
 
   const fetchGrants = () => {
     const params = new URLSearchParams();
@@ -71,7 +81,9 @@ const Grants: React.FC = () => {
           <h1 className="page-title">Grants</h1>
           <p className="page-subtitle">Track grant lifecycles, milestones, and compliance</p>
         </div>
-        <button className="btn btn-accent" onClick={openCreate}><Plus size={18} /> New Grant</button>
+        {canAddGrant && (
+          <button className="btn btn-accent" onClick={openCreate}><Plus size={18} /> New Grant</button>
+        )}
       </div>
 
       <div className="filters-bar">
@@ -146,7 +158,7 @@ const Grants: React.FC = () => {
               )}
 
               {/* Actions */}
-              {selectedGrant?._id === g._id && g.status !== 'Closed' && (
+              {canEditGrant && selectedGrant?._id === g._id && g.status !== 'Closed' && (
                 <div className="flex gap-2" style={{ marginTop: 16 }}>
                   {g.status === 'Applied' && <button className="btn btn-primary btn-sm" onClick={(e) => { e.stopPropagation(); handleStatusChange(g._id, 'Approved'); }}>Approve</button>}
                   {g.status === 'Approved' && <button className="btn btn-primary btn-sm" onClick={(e) => { e.stopPropagation(); handleStatusChange(g._id, 'Active'); }}>Activate</button>}

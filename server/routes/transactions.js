@@ -114,6 +114,11 @@ router.post('/', async (req, res) => {
 router.patch('/:id/approve', async (req, res) => {
   try {
     const { approvalStatus, approvedBy, reviewedBy } = req.body;
+    
+    // Get before state to prevent double-counting
+    const beforeTx = await Transaction.findById(req.params.id);
+    if (!beforeTx) return res.status(404).json({ message: 'Transaction not found' });
+
     const update = { approvalStatus };
     if (approvalStatus === 'Approved') {
       update.approvedBy = approvedBy;
@@ -125,15 +130,20 @@ router.patch('/:id/approve', async (req, res) => {
     } else if (approvalStatus === 'Rejected') {
       update.status = 'Rejected';
     }
+
     const transaction = await Transaction.findByIdAndUpdate(req.params.id, update, { new: true })
       .populate('donor', 'name type')
       .populate('grant', 'title grantNumber');
-    if (!transaction) return res.status(404).json({ message: 'Transaction not found' });
 
-    if (transaction.status === 'Completed' && transaction.grant) {
+    // Only apply financial changes if status just changed to Completed
+    if (beforeTx.status !== 'Completed' && transaction.status === 'Completed' && transaction.grant) {
       if (transaction.type === 'Expenditure') {
         await Grant.findByIdAndUpdate(transaction.grant, {
           $inc: { amountSpent: transaction.amount, amountRemaining: -transaction.amount }
+        });
+      } else if (transaction.type === 'Grant Disbursement') {
+        await Grant.findByIdAndUpdate(transaction.grant, {
+          $inc: { amountDisbursed: transaction.amount }
         });
       }
     }
