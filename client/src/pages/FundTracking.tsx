@@ -122,7 +122,7 @@ const FundTracking: React.FC = () => {
   const isProjectManager = user?.role === 'project_manager';
 
   const canAddTx = isAdmin || isFinance || isProjectManager;
-  const canApprove = isAdmin || isFinance;
+  const canApprove = isAdmin || isTreasurer;
   const canFlag = isAdmin || isFinance || isTreasurer || isProjectManager;
   const canReconcile = isAdmin || isFinance;
   const canAnalyze = isAdmin || isFinance || isTreasurer || isProjectManager;
