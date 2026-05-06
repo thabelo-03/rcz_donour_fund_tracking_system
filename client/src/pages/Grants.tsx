@@ -33,10 +33,12 @@ const Grants: React.FC = () => {
   const isAdmin = user?.role === 'admin';
   const isFinance = user?.role === 'finance_officer';
   const isProjectManager = user?.role === 'project_manager';
+  const isTreasurer = user?.role === 'treasurer';
 
   const canAddGrant = isAdmin || isFinance || isProjectManager;
   const canEditGrant = isAdmin || isFinance || isProjectManager;
-  const canDeleteGrant = isAdmin; // not used in UI yet, but good to have
+  const canDeleteGrant = isAdmin;
+  const canApproveGrant = isAdmin || isTreasurer;
 
   const fetchGrants = () => {
     const params = new URLSearchParams();
@@ -162,13 +164,13 @@ const Grants: React.FC = () => {
               )}
 
               {/* Actions */}
-              {canEditGrant && selectedGrant?._id === g._id && g.status !== 'Closed' && (
+              {(canEditGrant || canApproveGrant) && selectedGrant?._id === g._id && g.status !== 'Closed' && (
                 <div className="flex gap-2" style={{ marginTop: 16 }}>
-                  {g.status === 'Applied' && <button className="btn btn-primary btn-sm" onClick={(e) => { e.stopPropagation(); handleStatusChange(g._id, 'Approved'); }}>Approve</button>}
-                  {g.status === 'Approved' && <button className="btn btn-primary btn-sm" onClick={(e) => { e.stopPropagation(); handleStatusChange(g._id, 'Active'); }}>Activate</button>}
-                  {g.status === 'Active' && <button className="btn btn-outline btn-sm" onClick={(e) => { e.stopPropagation(); handleStatusChange(g._id, 'Reporting'); }}>Move to Reporting</button>}
-                  {g.status === 'Reporting' && <button className="btn btn-outline btn-sm" onClick={(e) => { e.stopPropagation(); handleStatusChange(g._id, 'Closed'); }}>Close Grant</button>}
-                  <button className="btn btn-outline btn-sm" style={{ color: 'var(--danger)' }} onClick={(e) => { e.stopPropagation(); handleStatusChange(g._id, 'Suspended'); }}>Suspend</button>
+                  {canApproveGrant && g.status === 'Applied' && <button className="btn btn-primary btn-sm" onClick={(e) => { e.stopPropagation(); handleStatusChange(g._id, 'Approved'); }}>Approve</button>}
+                  {canEditGrant && g.status === 'Approved' && <button className="btn btn-primary btn-sm" onClick={(e) => { e.stopPropagation(); handleStatusChange(g._id, 'Active'); }}>Activate</button>}
+                  {canEditGrant && g.status === 'Active' && <button className="btn btn-outline btn-sm" onClick={(e) => { e.stopPropagation(); handleStatusChange(g._id, 'Reporting'); }}>Move to Reporting</button>}
+                  {canEditGrant && g.status === 'Reporting' && <button className="btn btn-outline btn-sm" onClick={(e) => { e.stopPropagation(); handleStatusChange(g._id, 'Closed'); }}>Close Grant</button>}
+                  {canEditGrant && <button className="btn btn-outline btn-sm" style={{ color: 'var(--danger)' }} onClick={(e) => { e.stopPropagation(); handleStatusChange(g._id, 'Suspended'); }}>Suspend</button>}
                 </div>
               )}
             </div>
